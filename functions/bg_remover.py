@@ -1,6 +1,6 @@
 """
 Background Remover Tool
-Remove image backgrounds using OpenCV GrabCut algorithm
+Remove image backgrounds using PIL-based approach (no OpenCV required)
 Bilingual: English and Amharic
 """
 
@@ -12,17 +12,10 @@ from kivy.app import App
 from threading import Thread
 import os
 from datetime import datetime
+from PIL import Image, ImageFilter, ImageOps
 
-# Try to import OpenCV
-try:
-    import cv2
-    import numpy as np
-    from PIL import Image
-    OPENCV_AVAILABLE = True
-except ImportError:
-    OPENCV_AVAILABLE = False
+# No OpenCV needed!
 
-# Define strings outside the class for static access
 STRINGS = {
     'en': {
         'bg_remover': 'Background Remover',
@@ -35,17 +28,18 @@ STRINGS = {
         'clear': 'Clear All',
         'processing': 'Processing image...',
         'processing_step1': 'Loading image...',
-        'processing_step2': 'Applying GrabCut algorithm...',
-        'processing_step3': 'Creating transparent background...',
+        'processing_step2': 'Analyzing image edges...',
+        'processing_step3': 'Creating transparency...',
+        'processing_step4': 'Refining edges...',
         'complete': 'Background removed successfully!',
         'error': 'Error processing image',
-        'no_opencv': 'Background remover not available. Install opencv-python',
         'select_image_first': 'Please select an image first',
         'saved': 'Image saved successfully!',
         'save_error': 'Error saving image',
         'ready': 'Ready',
         'select_image_prompt': 'Select an image to begin',
-        'draw_rectangle': 'Draw rectangle around the main object'
+        'tap_to_keep': 'Tap on areas to keep',
+        'tap_to_remove': 'Tap on areas to remove'
     },
     'am': {
         'bg_remover': 'ዳራ አስወጋጅ',
@@ -58,17 +52,18 @@ STRINGS = {
         'clear': 'ሁሉንም አጽዳ',
         'processing': 'ምስል በማስኬድ ላይ...',
         'processing_step1': 'ምስል በመጫን ላይ...',
-        'processing_step2': 'GrabCut ስልተ ቀመር በመተግበር ላይ...',
-        'processing_step3': 'ግልጽ ዳራ በመፍጠር ላይ...',
+        'processing_step2': 'የምስል ጠርዞች በመተንተን ላይ...',
+        'processing_step3': 'ግልጽነት በመፍጠር ላይ...',
+        'processing_step4': 'ጠርዞች በማጣራት ላይ...',
         'complete': 'ዳራ በተሳካ ሁኔታ ተወግዷል!',
         'error': 'ምስል በማስኬድ ላይ ስህተት',
-        'no_opencv': 'ዳራ አስወጋጅ አይገኝም። opencv-python ይጫኑ',
         'select_image_first': 'እባክዎ መጀመሪያ ምስል ይምረጡ',
         'saved': 'ምስል በተሳካ ሁኔታ ተቀምጧል!',
         'save_error': 'ምስል በማስቀመጥ ላይ ስህተት',
         'ready': 'ዝግጁ',
         'select_image_prompt': 'ለመጀመር ምስል ይምረጡ',
-        'draw_rectangle': 'በዋናው ነገር ዙሪያ አራት ማዕዘን ይሳሉ'
+        'tap_to_keep': 'ማስቀመጥ የሚፈልጉትን ቦታ ይንኩ',
+        'tap_to_remove': 'ማስወገድ የሚፈልጉትን ቦታ ይንኩ'
     }
 }
 
@@ -116,14 +111,14 @@ Builder.load_string('''
         
         # Image Selection Section
         BoxLayout:
-            size_hint_y: 0.15
+            size_hint_y: 0.12
             orientation: 'vertical'
             spacing: 5
             
             Label:
                 id: select_label
                 text: ''
-                font_size: '16sp'
+                font_size: '14sp'
                 color: (1, 1, 1, 1) if app.dark_mode else (0.2, 0.2, 0.2, 1)
                 size_hint_y: 0.3
                 text_size: self.size
@@ -141,14 +136,14 @@ Builder.load_string('''
         
         # Image Preview Section
         BoxLayout:
-            size_hint_y: 0.4
+            size_hint_y: 0.3
             orientation: 'vertical'
             spacing: 5
             
             Label:
                 id: preview_label
                 text: ''
-                font_size: '16sp'
+                font_size: '14sp'
                 color: (1, 1, 1, 1) if app.dark_mode else (0.2, 0.2, 0.2, 1)
                 size_hint_y: 0.1
             
@@ -171,7 +166,7 @@ Builder.load_string('''
         Button:
             id: process_btn
             text: ''
-            size_hint_y: 0.1
+            size_hint_y: 0.08
             background_normal: ''
             background_color: (0.2, 0.8, 0.2, 1)
             color: 1, 1, 1, 1
@@ -180,7 +175,7 @@ Builder.load_string('''
         
         # Progress Section
         BoxLayout:
-            size_hint_y: 0.15
+            size_hint_y: 0.12
             orientation: 'vertical'
             spacing: 5
             
@@ -188,6 +183,7 @@ Builder.load_string('''
                 id: progress_label
                 text: root.progress_text
                 size_hint_y: 0.3
+                font_size: '12sp'
                 color: (1, 1, 1, 1) if app.dark_mode else (0.2, 0.2, 0.2, 1)
             
             ProgressBar:
@@ -200,11 +196,12 @@ Builder.load_string('''
                 id: status_label
                 text: root.status_text
                 size_hint_y: 0.3
+                font_size: '12sp'
                 color: (0.7, 0.7, 0.7, 1) if app.dark_mode else (0.4, 0.4, 0.4, 1)
         
         # Result Preview (after processing)
         BoxLayout:
-            size_hint_y: 0.4
+            size_hint_y: 0.3
             orientation: 'vertical'
             spacing: 5
             opacity: 1 if root.result_path else 0
@@ -212,7 +209,7 @@ Builder.load_string('''
             Label:
                 id: result_label
                 text: ''
-                font_size: '16sp'
+                font_size: '14sp'
                 color: (1, 1, 1, 1) if app.dark_mode else (0.2, 0.2, 0.2, 1)
                 size_hint_y: 0.1
             
@@ -255,7 +252,7 @@ Builder.load_string('''
 ''')
 
 class BackgroundRemoverScreen(Screen):
-    """Background Remover Screen using OpenCV GrabCut"""
+    """Background Remover Screen using PIL-based approach (no OpenCV)"""
     
     # Properties
     image_path = StringProperty('')
@@ -269,7 +266,6 @@ class BackgroundRemoverScreen(Screen):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.app = None
-        self.original_image = None
     
     def on_pre_enter(self):
         """Called before screen enters"""
@@ -328,7 +324,7 @@ class BackgroundRemoverScreen(Screen):
         
         content = BoxLayout(orientation='vertical')
         filechooser = FileChooserListView(path=os.path.expanduser('~'), 
-                                         filters=['*.png', '*.jpg', '*.jpeg', '*.bmp'])
+                                         filters=['*.png', '*.jpg', '*.jpeg', '*.bmp', '*.gif'])
         content.add_widget(filechooser)
         
         btn_layout = BoxLayout(size_hint_y=0.1, spacing=10)
@@ -354,13 +350,9 @@ class BackgroundRemoverScreen(Screen):
         popup.open()
     
     def process_image(self):
-        """Remove background from image using GrabCut"""
+        """Remove background from image using PIL-based approach"""
         if not self.image_path:
             self.show_popup(self.get_string('select_image_first'))
-            return
-        
-        if not OPENCV_AVAILABLE:
-            self.show_popup(self.get_string('no_opencv'))
             return
         
         self.is_processing = True
@@ -372,72 +364,131 @@ class BackgroundRemoverScreen(Screen):
         # Run in thread to avoid blocking UI
         Thread(target=self._process_thread).start()
     
-    def _grabcut_segmentation(self, img):
-        """Perform GrabCut segmentation on the image"""
-        # Create a mask initialized with GC_BGD (background)
-        mask = np.zeros(img.shape[:2], np.uint8)
+    def _remove_background_pil(self, image):
+        """
+        Remove background using PIL-based techniques
+        This is a simplified approach that works well for objects with distinct edges
+        """
+        # Convert to RGBA if not already
+        if image.mode != 'RGBA':
+            image = image.convert('RGBA')
         
-        # Create temporary arrays used by GrabCut
-        bgd_model = np.zeros((1, 65), np.float64)
-        fgd_model = np.zeros((1, 65), np.float64)
+        # Get image data
+        datas = image.getdata()
         
-        # Define rectangle around the center of the image (assuming main object is centered)
-        height, width = img.shape[:2]
+        # Create a new image with transparency
+        new_data = []
         
-        # Use a rectangle that covers the central 80% of the image
-        rect_margin = 0.1
-        x1 = int(width * rect_margin)
-        y1 = int(height * rect_margin)
-        x2 = int(width * (1 - rect_margin))
-        y2 = int(height * (1 - rect_margin))
-        rect = (x1, y1, x2 - x1, y2 - y1)
+        # Get the background color from corners (assume corners are background)
+        width, height = image.size
         
-        # Apply GrabCut
-        cv2.grabCut(img, mask, rect, bgd_model, fgd_model, 5, cv2.GC_INIT_WITH_RECT)
+        # Sample colors from corners
+        corners = [
+            image.getpixel((0, 0)),           # Top-left
+            image.getpixel((width-1, 0)),      # Top-right
+            image.getpixel((0, height-1)),      # Bottom-left
+            image.getpixel((width-1, height-1)) # Bottom-right
+        ]
         
-        # Create mask where sure and probable foreground pixels are set to 1
-        mask2 = np.where((mask == cv2.GC_FGD) | (mask == cv2.GC_PR_FGD), 1, 0).astype('uint8')
+        # Calculate average background color
+        bg_r = sum(c[0] for c in corners) // 4
+        bg_g = sum(c[1] for c in corners) // 4
+        bg_b = sum(c[2] for c in corners) // 4
         
-        return mask2
+        # Threshold for color similarity
+        threshold = 60
+        
+        # Process each pixel
+        for item in datas:
+            r, g, b, a = item
+            
+            # Check if pixel is similar to background color
+            if (abs(r - bg_r) < threshold and 
+                abs(g - bg_g) < threshold and 
+                abs(b - bg_b) < threshold):
+                # Make transparent
+                new_data.append((r, g, b, 0))
+            else:
+                # Keep original
+                new_data.append((r, g, b, a))
+        
+        # Create new image with transparency
+        image.putdata(new_data)
+        
+        # Apply edge enhancement to clean up
+        image = image.filter(ImageFilter.EDGE_ENHANCE)
+        
+        return image
+    
+    def _remove_background_advanced(self, image):
+        """
+        Advanced background removal using edge detection and masking
+        """
+        # Convert to RGBA
+        if image.mode != 'RGBA':
+            image = image.convert('RGBA')
+        
+        # Create a grayscale version for edge detection
+        gray = image.convert('L')
+        
+        # Find edges
+        edges = gray.filter(ImageFilter.FIND_EDGES)
+        
+        # Apply a threshold to edges
+        edge_data = edges.getdata()
+        edge_threshold = 50
+        
+        # Create a mask based on edges
+        width, height = image.size
+        mask = Image.new('L', (width, height), 0)
+        mask_data = []
+        
+        for value in edge_data:
+            if value > edge_threshold:
+                mask_data.append(255)  # Edge pixel - keep
+            else:
+                mask_data.append(0)    # Non-edge - might be background
+        
+        mask.putdata(mask_data)
+        
+        # Dilate the mask to include areas near edges
+        mask = mask.filter(ImageFilter.MaxFilter(3))
+        
+        # Apply the mask to the original image
+        result = Image.new('RGBA', image.size, (0, 0, 0, 0))
+        result.paste(image, mask=mask)
+        
+        return result
     
     def _process_thread(self):
-        """Background processing thread using GrabCut"""
+        """Background processing thread using PIL"""
         try:
             # Update progress
             Clock.schedule_once(lambda dt: self._update_progress(20, self.get_string('processing_step1')), 0)
             
-            # Read image with OpenCV
-            img = cv2.imread(self.image_path)
-            if img is None:
-                raise Exception("Failed to load image")
-            
-            # Convert from BGR to RGB for PIL later
-            img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+            # Open image with PIL
+            image = Image.open(self.image_path)
             
             Clock.schedule_once(lambda dt: self._update_progress(40, self.get_string('processing_step2')), 0)
             
-            # Apply GrabCut
-            mask = self._grabcut_segmentation(img)
+            # Try advanced method first, fall back to simple if it fails
+            try:
+                result_image = self._remove_background_advanced(image)
+            except:
+                result_image = self._remove_background_pil(image)
             
             Clock.schedule_once(lambda dt: self._update_progress(70, self.get_string('processing_step3')), 0)
             
-            # Create RGBA image with transparency
-            # Create a 4-channel image (RGBA)
-            height, width = img.shape[:2]
-            result = np.zeros((height, width, 4), dtype=np.uint8)
+            # Further refine (optional)
+            result_image = result_image.filter(ImageFilter.SMOOTH_MORE)
             
-            # Copy RGB channels from original
-            result[:, :, :3] = img_rgb
-            
-            # Set alpha channel based on mask (255 for foreground, 0 for background)
-            result[:, :, 3] = mask * 255
-            
-            # Convert to PIL Image
-            pil_image = Image.fromarray(result)
+            Clock.schedule_once(lambda dt: self._update_progress(90, self.get_string('processing_step4')), 0)
             
             # Save temporary file
-            temp_path = os.path.join(self.app.get_storage_path('images'), 'temp_output.png')
-            pil_image.save(temp_path, 'PNG')
+            temp_dir = self.app.get_storage_path('images')
+            os.makedirs(temp_dir, exist_ok=True)
+            temp_path = os.path.join(temp_dir, 'temp_output.png')
+            result_image.save(temp_path, 'PNG')
             
             Clock.schedule_once(lambda dt: self._process_complete(temp_path), 0)
             
@@ -466,7 +517,7 @@ class BackgroundRemoverScreen(Screen):
         self.status_text = self.get_string('error')
         self.is_processing = False
         self.ids.process_btn.disabled = False
-        self.show_popup(self.get_string('error') + f": {error}")
+        self.show_popup(self.get_string('error') + f"\n{error}")
     
     def save_image(self):
         """Save processed image with user-friendly message"""
@@ -511,7 +562,7 @@ class BackgroundRemoverScreen(Screen):
         content = BoxLayout(orientation='vertical', padding=10, spacing=10)
         
         # Set font for label based on language
-        label = Label(text=message)
+        label = Label(text=message, text_size=(self.width * 0.7, None), halign='center')
         if self.app and self.app.current_lang == 'am' and self.app.FONT_REGISTERED:
             label.font_name = 'Abyssinica'
         content.add_widget(label)
