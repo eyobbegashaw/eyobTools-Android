@@ -33,7 +33,7 @@ version = 1.0.0
 
 # (str) Application versioning (method 2)
 # version.regex = __version__ = ['"](.*)['"]
-version.filename = %(source.dir)s/App.py
+#version.filename = %(source.dir)s/App.py
 
 # (list) Application requirements
 # comma separated e.g. requirements = sqlite3,kivy
@@ -130,6 +130,7 @@ android.private_storage = True
 # This can be useful to avoid excess Internet downloads or save time
 # when an update is due and you just want to test/build your package
 android.skip_update = False
+
 
 # (bool) If True, then automatically accept SDK license
 # agreements. This is intended for automation only. If set to False,
