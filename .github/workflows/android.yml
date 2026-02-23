@@ -1,0 +1,41 @@
+name: Android Build
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04 # ይሄ ስሪት ለ OpenCV በጣም የተረጋጋ ነው
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y git zip unzip autoconf libtool pkg-config zlib1g-dev \
+          libncurses5-dev libncursesw5-dev libtinfo5 cmake libffi-dev libssl-dev \
+          build-essential libsqlite3-dev m4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install Buildozer & Cython
+        run: |
+          pip install --upgrade pip
+          pip install buildozer
+          pip install Cython==0.29.33
+
+      - name: Build with Buildozer
+        run: |
+          yes | buildozer -v android debug
+        env:
+          ACCEPT_SDK_LICENSE: "yes"
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: eyoTools-Debug-APK
+          path: bin/*.apk
