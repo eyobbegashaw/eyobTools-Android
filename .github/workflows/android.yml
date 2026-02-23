@@ -26,10 +26,12 @@ jobs:
 
       - name: Build with Buildozer
         run: |
-          # yes | buildozer የሚለው ፋንታ ይህንን እንጠቀም
-          buildozer -v android debug
+          # 'yes |' የሚለውን ትተን በምትኩ በ env በኩል ፍቃድ እንስጥ
+          buildozer android debug
         env:
           ACCEPT_SDK_LICENSE: "yes"
+          # ይህ Buildozer ጥያቄ እንዳይጠይቅ ይረዳል
+          APP_ANDROID_ACCEPT_SDK_LICENSE: "1" 
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
