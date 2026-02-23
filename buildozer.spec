@@ -22,7 +22,8 @@ source.include_patterns = assets/*,fonts/*,functions/*.py
 #source.exclude_exts = spec
 
 # (list) List of directory to exclude (let empty to not exclude anything)
-source.exclude_dirs = tests, bin, venv, __pycache__, .git, buildozer.spec
+# ⚠️ ትኩረት: buildozer.spec እዚህ መዘርዘር አይገባም!
+source.exclude_dirs = tests, venv, bin, __pycache__, .git
 
 # (list) List of exclusions using pattern matching
 # Do not prefix with './'
@@ -32,7 +33,8 @@ source.exclude_dirs = tests, bin, venv, __pycache__, .git, buildozer.spec
 version = 1.0.0
 
 # (list) Application requirements
-requirements = python3==3.11.6, kivy==2.3.0, pillow==10.1.0, pyjnius==1.6.0, pypdf==3.17.4, android, requests==2.31.0, urllib3==2.1.0
+# ቀላል በሆነ መልኩ python3 ብቻ እንጠቀም (ስሪት አንጥቀስም)
+requirements = python3, kivy==2.3.0, pillow, pyjnius, pypdf, android, requests, urllib3
 
 # (str) Presplash of the application
 presplash.filename = %(source.dir)s/assets/splash.png
@@ -42,18 +44,6 @@ icon.filename = %(source.dir)s/assets/icon.png
 
 # (list) Supported orientations
 orientation = portrait
-
-#
-# OSX Specific
-#
-
-# author = © Copyright Info
-
-# change the major version of python used by the app
-osx.python_version = 3
-
-# Kivy version to use
-osx.kivy_version = 2.1.0
 
 #
 # Android specific
@@ -83,81 +73,65 @@ android.ndk = 25b
 # (int) Android NDK API to use
 android.ndk_api = 21
 
-# (bool) Use --private data storage (True) or --dir public storage (False)
+# (bool) Use --private data storage
 android.private_storage = True
 
-# (bool) If True, then skip trying to update the Android sdk
+# (bool) Skip updating Android sdk
 android.skip_update = False
 
-# (bool) If True, then automatically accept SDK license agreements
+# (bool) Automatically accept SDK license agreements
 android.accept_sdk_license = True
 
 # (str) Android app theme
 android.apptheme = "@android:style/Theme.NoTitleBar"
 
-# (list) Gradle dependencies to add
+# (list) Gradle dependencies
 android.gradle_dependencies = 'androidx.core:core:1.9.0'
 
 # (bool) Enable AndroidX support
 android.enable_androidx = True
 
-# (str) Android logcat filters to use
+# (str) Android logcat filters
 android.logcat_filters = *:S python:D
 
-# (list) The Android archs to build for
+# (list) Android archs to build for
 android.archs = arm64-v8a, armeabi-v7a
 
 # (int) Numeric version code
 android.numeric_version = 1
 
-# (bool) enables Android auto backup feature
+# (bool) Enable Android auto backup
 android.allow_backup = True
 
-# (str) The format used to package the app for release mode
+# (str) Release artifact format
 android.release_artifact = apk
 
-# (str) The format used to package the app for debug mode
+# (str) Debug artifact format
 android.debug_artifact = apk
 
 #
 # Python for android (p4a) specific
 #
 
-# (str) Bootstrap to use for android builds
+# (str) Bootstrap
 p4a.bootstrap = sdl2
 
-# (bool) Control passing the --use-setup-py vs --ignore-setup-py to p4a
+# (bool) Use setup.py
 p4a.setup_py = False
 
-# (str) extra command line arguments to pass when invoking pythonforandroid.toolchain
+# (str) Extra command line arguments
 p4a.extra_args = --ignore-setup-py
-
-#
-# iOS specific
-#
-
-# (str) Path to a custom kivy-ios folder
-ios.kivy_ios_url = https://github.com/kivy/kivy-ios
-ios.kivy_ios_branch = master
-
-# (str) Path to a custom ios-deploy
-ios.ios_deploy_url = https://github.com/phonegap/ios-deploy
-ios.ios_deploy_branch = 1.10.0
-
-# (bool) Whether or not to sign the code
-ios.codesign.allowed = false
-
 
 [buildozer]
 
-# (int) Log level (0 = error only, 1 = info, 2 = debug)
+# (int) Log level
 log_level = 2
 
-# (int) Display warning if buildozer is run as root
+# (int) Warn on root
 warn_on_root = 1
 
-# (str) Path to build artifact storage
+# (str) Build directory
 build_dir = ./.buildozer
 
-# (str) Path to build output (i.e. .apk, .aab, .ipa) storage
+# (str) Bin directory
 bin_dir = ./bin
