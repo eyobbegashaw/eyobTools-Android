@@ -98,7 +98,7 @@ android.permissions = INTERNET, WRITE_EXTERNAL_STORAGE, READ_EXTERNAL_STORAGE
 
 # (list) features (adds uses-feature -tags to manifest)
 #android.features = android.hardware.usb.host
-
+ 
 # (int) Target Android API, should be as high as possible.
 android.api = 33
 
