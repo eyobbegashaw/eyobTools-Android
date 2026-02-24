@@ -6,14 +6,14 @@ source.dir = .
 source.include_exts = py,png,jpg,kv,ttf,json,txt
 source.include_patterns = assets/*,fonts/*,functions/*.py
 source.exclude_dirs = tests, bin, venv, __pycache__, .git
-version = 1.0.0
+version = 1.0.1
 
 # Requirements - ጥቂት እና አስፈላጊዎቹ ብቻ
 requirements = python3, kivy==2.3.0, pillow, pyjnius, pypdf, android, requests, urllib3
 
 # ምስሎች (መንገዱን እንዲህ አድርገው - ቀጥታ assets/ በማለት)
-presplash.filename = assets/splash.png
-icon.filename = assets/icon.png
+#presplash.filename = assets/splash.png
+#icon.filename = assets/icon.png
 
 orientation = portrait
 fullscreen = 0
