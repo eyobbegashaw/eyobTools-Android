@@ -14,6 +14,12 @@ jobs:
           libncurses5-dev libncursesw5-dev libtinfo5 cmake libffi-dev libssl-dev \
           build-essential libsqlite3-dev m4 python3-pip openjdk-17-jdk
 
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -26,7 +32,7 @@ jobs:
 
       - name: Build with Buildozer
         run: |
-          # --profile=demo ወይም --bootstrap በመጨመር Buildozerን እናነቃቃዋለን
+          # -v (verbose) ስህተቶችን በዝርዝር ለማየት ይረዳል
           buildozer -v android debug
         env:
           ACCEPT_SDK_LICENSE: "yes"
