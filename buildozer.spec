@@ -6,9 +6,19 @@ source.dir = .
 source.include_exts = py,png,jpg,kv,ttf,json,txt
 source.include_patterns = assets/*,fonts/*,functions/*.py
 source.exclude_dirs = tests, bin, venv, __pycache__, .git
+
+# ቨርዥኑን እንዲህ በቀጥታ ቁጥር አድርገው (ስህተት እንዳይመጣ)
 version = 1.0.0
-# OpenCV እና Numpyን አውጥተነዋል
+
+# መስመር 45፡ numpy እና opencv ለጊዜው ወጥተዋል
 requirements = python3, kivy==2.3.0, pillow, pyjnius, pypdf, android, requests, urllib3
+
+# (str) Presplash of the application
+presplash.filename = %(source.dir)s/assets/splash.png
+
+# (str) Icon of the application
+icon.filename = %(source.dir)s/assets/icon.png
+
 orientation = portrait
 fullscreen = 0
 android.permissions = INTERNET, WRITE_EXTERNAL_STORAGE, READ_EXTERNAL_STORAGE
