@@ -6,23 +6,18 @@ source.dir = .
 source.include_exts = py,png,jpg,kv,ttf,json,txt
 source.include_patterns = assets/*,fonts/*,functions/*.py
 source.exclude_dirs = tests, bin, venv, __pycache__, .git
-
-# ቨርዥን
 version = 1.0.0
 
-# Requirements (ቀለል ያሉ እና የሚሰሩ)
+# Requirements - ጥቂት እና አስፈላጊዎቹ ብቻ
 requirements = python3, kivy==2.3.0, pillow, pyjnius, pypdf, android, requests, urllib3
 
-# (str) Presplash and Icon (መንገዱን በቀጥታ እንዲህ ብታደርገው ይመረጣል)
+# ምስሎች (መንገዱን እንዲህ አድርገው - ቀጥታ assets/ በማለት)
 presplash.filename = assets/splash.png
 icon.filename = assets/icon.png
 
 orientation = portrait
 fullscreen = 0
-
-# Permissions (ለአሁኑ አንድሮይድ ስሪቶች INTERNET ብቻ ይበቃል)
 android.permissions = INTERNET
-
 android.api = 33
 android.minapi = 21
 android.sdk = 33
